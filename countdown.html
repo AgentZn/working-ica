@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Countdown</title>
+    <style>
+      #videoContainer {
+        position: relative;
+        width: 640px;
+        height: 480px;
+      }
+      #overlayRed, #overlayGreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.5;
+        display: none;
+      }
+      #overlayRed {
+        background-color: red;
+      }
+      #overlayGreen {
+        background-color: green;
+      }
+      #countdown {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 72px;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 10px black;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="videoContainer">
+      <video id="video" width="640" height="480" autoplay></video>
+      <div id="overlayRed"></div>
+      <div id="overlayGreen"></div>
+      <div id="countdown"></div>
+    </div>
+    <button id="startButton">Start Recording</button>
+    <script>
+      var video = document.getElementById('video');
+      var countdown = document.getElementById('countdown');
+      var startButton = document.getElementById('startButton');
+      var overlayRed = document.getElementById('overlayRed');
+      var overlayGreen = document.getElementById('overlayGreen');
+      var audio = new Audio('audio/race-start-beeps-125125.mp3');
+      var recorder;
+      var startPosition = "good"; // Add your logic to set the startPosition variable
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          video.srcObject = stream;
+          if (startPosition !== "good") {
+            overlayRed.style.display = 'block';
+            overlayGreen.style.display = 'none';
+          } else {
+            overlayRed.style.display = 'none';
+            overlayGreen.style.display = 'block';
+          }
+        })
+        .catch(function(error) {
+          console.log('Error:', error);
+        });
+
+      startButton.onclick = function() {
+        if (startPosition === "good") {
+          overlayGreen.style.display = 'none'; // Remove green overlay when countdown starts
+          startButton.style.display = 'none';
+          countdown.style.display = 'block';
+          var count = 3;
+          countdown.innerHTML = count;
+          audio.play();
+          var countdownInterval = setInterval(function() {
+            if (count > 1) {
+              count--;
+              countdown.innerHTML = count;
+            } else if (count == 1) {
+              countdown.innerHTML = "Go";
+              setTimeout(function() {
+                clearInterval(countdownInterval);
+                countdown.style.display = 'none';
+                startRecording();
+              }, 1000);
+              count--;
+            }
+          }, 1000);
+        }
+      };
+
+      function startRecording() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function(stream) {
+            video.srcObject = stream;
+            recorder = new MediaRecorder(stream);
+            recorder.start();
+            setTimeout(stopRecording, 60000); // stop recording after 60 seconds
+          })
+          .catch(function(error) {
+            console.log('Error:', error);
+          });
+      }
+
+      function stopRecording() {
+        if (recorder && recorder.state !== 'inactive') {
+          recorder.stop();
+          video.srcObject = null;
+          startButton.style.display = 'block';
+          overlayRed.style.display = 'none';
+          overlayGreen.style.display = 'none';
+        }
+      }
+    </script>
+  </body>
+</html>
+
